@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ucamp.project.user.UserDAO"> 
+
+	<select id = "login" resultType = "String" parameterType="map">
+		SELECT pen_name as penName FROM app_user WHERE user_id = #{userId} and user_pw = #{userPw}
+	</select>
+	
+	<insert id = "addUser" parameterType = "map">
+		INSERT INTO
+		app_user(user_id, name, pen_name, user_pw, email, tel) 
+		VALUES(#{userId},#{name},#{penName},#{userPw},#{email},#{tel})
+	</insert>
+		
+	<insert id = "addUser2" parameterType="com.ucamp.project.dto.AppUserDTO">
+		INSERT INTO
+		app_user(user_id, name, pen_name, user_pw, email, tel) 
+		VALUES(#{userId},#{name},#{penName},#{userPw},#{email},#{tel})
+	</insert>
+	
+	<select id = "findId" parameterType = "map" resultType = "String">
+		SELECT user_id AS userId FROM app_user WHERE name = #{name} AND email = #{email}
+	</select>
+	
+	<select id = "findPw" parameterType = "map" resultType = "String">
+		SELECT user_pw AS userPw FROM app_user WHERE name = #{name} AND email = #{email}
+	</select>
+
+	<!-- v2 -->
+	<select id="selectUserId" resultType="string">
+		SELECT user_id 
+		FROM app_user 
+		WHERE name=#{name, jdbcType=VARCHAR} 
+		AND email=#{email, jdbcType=VARCHAR}
+	</select>
+	
+	<select id="selectUserPw" resultType="string">
+		SELECT user_pw 
+		FROM app_user 
+		WHERE name=#{name, jdbcType=VARCHAR} 
+		AND email=#{email, jdbcType=VARCHAR}
+	</select>
+	
+	<select id="checkUserId" parameterType="String" resultType="int">
+		SELECT count(user_id) AS userId FROM app_user WHERE user_id = #{userId, jdbcType=VARCHAR}
+	</select>
+	
+	<select id="checkPenName" parameterType="String" resultType="int">
+		SELECT count(pen_name) FROM app_user WHERE pen_name = #{penName}
+	</select>
+	
+	<select id="checkIdEmail" parameterType="map" resultType="String">
+		SELECT pen_name AS penName FROM app_user WHERE user_id = #{userId} AND email=#{email}
+	</select>
+	
+	<update id="setTemporaryPw" parameterType="map">
+		UPDATE app_user SET user_pw = #{userPw} WHERE user_id = #{userId}
+	</update>
+
+</mapper>

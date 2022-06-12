@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ucamp.project.write.WriteDAO"> 
+
+	<resultMap id="board" type="com.ucamp.project.dto.boardDTO">
+		<result property="writeNo" column="write_no"/>
+		<result property="writerId" column="writer_id"/>
+		<result property="suggestionName" column="suggestion_name"/>
+		<result property="contents" column="contents"/>
+		<result property="penName" column="pen_name"/>
+		<result property="writeDate" column="write_date"/>
+		<result property="emotionCode" column="emotion_code"/>
+		<result property="emotionName" column="emotion_name"/>
+		<result property="suggestionCode" column="suggestion_code"/>
+		<result property="shareStatus" column="share_status"/>
+		<result property="rCnt" column="rCnt"/>
+		<result property="bmCnt" column="bmCnt"/>		
+	</resultMap>
+	
+
+	<insert id="diaryWrite" parameterType="string">
+		INSERT INTO 
+		board(write_no, contents, write_date, share_status, writer_id, suggestion_code)
+		VALUES(write_no_seq.nextval, #{contents}, sysdate, '전체', #{writerId}, #{suggestionCode})
+	</insert>	
+
+	<delete id="diaryRemove">
+		DELETE FROM board 
+		WHERE writer_id = #{writerId} 
+		AND write_no = #{writeNo}
+	</delete>
+
+	<update id="diaryModify" parameterType="string" >
+		UPDATE board 
+		SET contents = #{contents}
+		WHERE writer_id = #{writerId} 
+		AND write_no = #{writeNo}
+	</update>
+	
+	<select id="searchByPenName" parameterType="string" resultType="string">
+		SELECT b.write_date, a.pen_name, s.suggestion_name 
+		FROM app_user a, board b, suggestion s 
+		WHERE a.user_id = b.writer_id
+		AND b.suggestion_code = s.suggestion_code
+		AND a.pen_name = #{penName}
+	</select>
+	
+	<select id="searchBySuggestionName" parameterType="string" resultType="string">
+		SELECT b.write_date, a.pen_name, s.suggestion_name 
+		FROM app_user a, board b, suggestion s 
+		WHERE a.user_id = b.writer_id
+		AND b.suggestion_code = s.suggestion_code
+		AND s.suggestion_name = #{suggestionName}
+	</select>
+	
+	<select id="getHomeBoardList" parameterType="string" resultMap="board">
+		SELECT b.write_no, b.writer_id, s.suggestion_name, b.contents, a.pen_name, b.write_date, e.emotion_code, e.emotion_name
+		FROM app_user a, board b, suggestion s, emotion e
+		WHERE b.writer_id = a.user_id 
+		AND b.suggestion_code = s.suggestion_code 
+		AND e.emotion_code = s.emotion_code
+		AND e.emotion_code = #{emotionCode}
+	</select>
+
+	<update id="setShareStatus" parameterType="string">
+		UPDATE board 
+		SET share_status = #{shareStatus}
+		WHERE write_no = #{writeNo}
+		AND writer_id = #{writerId}
+	</update>
+	
+	<select id="getNewBoardList" parameterType="string" resultMap="board">
+		<![CDATA[
+			SELECT b.write_no
+				, b.writer_id
+				, s.suggestion_name
+				, b.contents
+				, a.pen_name
+				, b.write_date
+			FROM app_user a
+				, board b
+				, suggestion s 
+			WHERE b.writer_id = a.user_id 
+			AND b.suggestion_code = s.suggestion_code
+			AND rownum<=10
+			ORDER BY b.write_date desc
+		]]>
+	</select>
+	
+	<select id="getNowRecommendedBoardList" parameterType="string" resultMap="board">
+		<![CDATA[
+			SELECT (SElECT count(*) 
+			      FROM reaction 
+			      WHERE write_no = b.write_no) AS rCnt 
+			    , (SElECT count(*) 
+			      FROM bookmark 
+			      WHERE write_no = b.write_no) AS bmCnt 
+			    , b.write_no
+			    , b.contents
+			    , b.write_date
+			    , b.share_status
+			    , b.writer_id
+			    , b.suggestion_code
+			FROM board b, bookmark bm, reaction r
+			WHERE b.write_no = bm.write_no 
+			AND b.write_no = r.write_no 
+			AND rownum <= 10
+			ORDER BY b.write_date desc, rCnt, bmCnt desc
+		]]>
+	</select>
+	
+	<select id="getEmotionCode" parameterType="string" resultType="string">
+		SELECT emotion_code 
+		FROM emotion
+		WHERE emotion_name = #{emotionName}
+	</select>
+	
+	<select id="getFriendWriteList" parameterType="string" resultType="string">
+		SELECT b.write_no
+		  , b.writer_id
+		  , s.suggestion_name
+		  , b.contents
+		  , a.pen_name
+		  , b.write_date
+		  , e.emotion_code
+		  , e.emotion_name
+		FROM app_user a
+		  , board b
+		  , suggestion s
+		  , emotion e
+		  , follow_list fl
+		WHERE b.writer_id = a.user_id 
+		AND b.suggestion_code = s.suggestion_code 
+		AND a.user_id = fl.followee_id
+		AND e.emotion_code = s.emotion_code
+		AND b.share_status = '전체'
+		AND fl.follower_id = #{followerId}
+		ORDER BY write_date DESC
+	</select>
+
+	<select id="getTrendWrite" parameterType="string" resultMap="board">
+		<![CDATA[
+			select s.suggestion_name
+			  , b.contents
+			  , a.pen_name
+			  , b.write_date 
+			from board b
+			  , suggestion s
+			  , emotion e
+			  , app_user a
+			where a.user_id = b.writer_id
+			and s.suggestion_code = b.suggestion_code
+			and e.emotion_code = s.emotion_code
+			and e.emotion_name = #{emotionName}
+			AND rownum <= 10
+		]]>
+	</select>
+	
+	<select id="getBookmarkedWriteList" parameterType="string" resultMap="board">
+		SELECT bo.write_no
+		  , bm.bookmark_date
+		  , s.suggestion_name
+		  , a.pen_name
+		FROM bookmark bm
+		  , board bo
+		  , suggestion s
+		  , app_user a
+		WHERE bm.write_no = bo.write_no 
+		AND bo.suggestion_code = s.suggestion_code
+		AND a.user_id = bo.writer_id
+		AND bo.share_status = '전체'
+		AND bm.user_id = #{userId}
+	</select>
+	
+	<select id="getBookmarkedWrite" parameterType="string" resultMap="board">
+		SELECT b.write_no
+		  , s.suggestion_name
+		  , b.contents, a.pen_name
+		  , b.write_date
+		  , e.emotion_code
+		FROM board b
+		  , app_user a
+		  , bookmark bm 
+		  , suggestion s
+		  , emotion e
+		WHERE a.user_id = b.writer_id
+		AND b.write_no = bm.write_no
+		AND b.suggestion_code = s.suggestion_code
+		AND s.emotion_code = e.emotion_code 
+		AND bm.user_id = #{userId}
+		AND bm.write_no = #{writeNo}
+	</select>
+	
+	<select id="getSearchResultWrite" parameterType="string" resultMap="board">
+		SELECT s.suggestion_name
+		  , b.contents
+		  , a.pen_name
+		  , b.write_date  
+		FROM app_user a
+		  , board b
+		  , suggestion s
+		  , emotion e 
+		WHERE a.user_id = b.writer_id 
+		AND b.suggestion_code = s.suggestion_code 
+		AND s.emotion_code = e.emotion_code 
+		AND a.pen_name = #{penName}
+		AND s.suggestion_name = #{suggestionName}  
+		AND to_char(b.write_date,'yyyy-mm-dd') = #{writeDate}
+	</select>
+	
+	<select id="myWriting" parameterType="string" resultMap="board">
+		SELECT b.write_no
+		  , b.write_date
+		  , a.pen_name
+		  , s.suggestion_name 
+		FROM app_user a
+		  , board b
+		  , suggestion s 
+		WHERE a.user_id = b.writer_id
+		AND b.suggestion_code = s.suggestion_code
+		AND a.user_id = #{userId} 
+		ORDER BY 1 DESC
+	</select>
+
+	<select id="getMyPageSearch" parameterType="string" resultMap="board">
+		SELECT b.write_no
+		  , b.write_date
+		  , a.pen_name
+		  , s.suggestion_name 
+		FROM app_user a
+		  , board b
+		  , suggestion s 
+		WHERE a.user_id = b.writer_id 
+		AND b.suggestion_code = s.suggestion_code 
+		AND a.user_id = #{userId}
+		AND to_char(b.write_date,'yyyy-mm-dd') = #{writeDate}
+		ORDER BY 1 DESC	
+	</select>
+	
+	<select id="getMyPageWrite" parameterType="string" resultMap="board">
+			select s.suggestion_name
+			  , b.contents
+			  , a.pen_name
+			  , b.write_date 
+			from app_user a
+			  , board b
+			  , suggestion s
+			  , emotion e
+			where a.user_id = b.writer_id
+			and b.suggestion_code = s.suggestion_code 
+			and s.emotion_code = e.emotion_code
+			and a.user_id = #{userId} 
+			and b.write_no = #{writeNo}
+	</select>
+
+	<select id="getWriteDetail" parameterType="string" resultMap="board"> 
+		SELECT b.write_no
+		  , b.writer_id
+		  , a.pen_name
+		  , b.contents
+		  ,  b.write_date
+		  , e.emotion_code
+		  , s.suggestion_name
+		  , b.share_status
+		  ,  e.emotion_name
+		  , s.suggestion_code 
+		FROM app_user a
+		  , board b
+		  , suggestion s
+		  , emotion e
+		WHERE b.writer_id = a.user_id 
+		AND b.suggestion_code = s.suggestion_code 
+		AND e.emotion_code = s.emotion_code
+		AND b.write_no = #{writeNo}
+	</select>
+
+	<select id="getSuggestionName" parameterType="string" resultType="string">
+		SELECT s.suggestion_name
+		  , b.contents 
+		FROM board b
+		  , suggestion s
+		  , emotion e
+		WHERE b.suggestion_code = s.suggestion_code
+		AND s.emotion_code = e.emotion_code
+		AND b.write_no = #{writeNo}
+	</select>
+
+</mapper>
+
+
+
+
+
+
+
+

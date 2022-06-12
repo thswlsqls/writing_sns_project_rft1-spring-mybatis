@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ucamp.project.interaction.InteractionDAO">
+	
+	<insert id="addFollow" parameterType="string">
+		INSERT INTO follow_list(follow_no, followee_id, follower_id, follow_date) 
+		VALUES(FOLLOW_NO_SEQ.nextval, #{followeeId}, #{followerId}, sysdate)
+	</insert>
+	
+	<delete id="deleteFollow" parameterType="string">
+		DELETE 
+		FROM follow_list 
+		WHERE followee_id = #{followeeId} 
+		AND follower_id = #{followerId}
+	</delete>
+	
+	<select id="getFollowList" parameterType="string" resultType="com.ucamp.project.dto.FollowListDTO">
+		SELECT fl.follow_no
+		  , to_char(fl.follow_date, 'yyyy.mm.dd')
+		  , fl.followee_id
+		  , fl.follower_id
+		  , a.pen_name
+		FROM follow_list fl, app_user a
+		WHERE fl.followee_id = a.user_id
+		AND fl.follower_id = #{followerId}
+	</select>
+	
+	<select id="getSortedByDateFollowList" parameterType="string" resultType="com.ucamp.project.dto.FollowListDTO"> 
+		SELECT fl.follow_no
+		    , to_char(fl.follow_date, 'yyyy.mm.dd')
+		    , fl.followee_id
+		    , fl.follower_id
+		    , a.pen_name
+		FROM follow_list fl, app_user a
+		WHERE fl.followee_id = a.user_id
+		AND fl.follower_id = #{followerId}
+		ORDER BY fl.follow_date
+	</select>
+	
+	<select id="getSortedByPenNameFollowList" parameterType="string" resultType="com.ucamp.project.dto.FollowListDTO"> 
+		SELECT fl.follow_no, to_char(fl.follow_date, 'yyyy.mm.dd')
+		    , fl.followee_id
+		    , fl.follower_id
+		    , a.pen_name
+		FROM follow_list fl, app_user a
+		WHERE fl.followee_id = a.user_id
+		AND fl.follower_id = #{followerId}
+		ORDER BY a.pen_name
+	</select>
+	
+	<insert id="addReaction">
+		INSERT 
+		INTO reaction(user_id, write_no, reaction_date) 
+		VALUES(#{userId}, #{writeNo}, sysdate)
+	</insert>
+	
+	<delete id="deleteReaction">
+		DELETE 
+		FROM reaction 
+		WHERE user_id = #{userId} 
+		AND write_no = #{writeNo}
+	</delete>
+	
+	<select id="isReacted">
+		SELECT COUNT(user_id)
+		FROM reaction 
+		WHERE user_id = #{userId} 
+		AND write_no = #{writeNo}
+	</select>
+
+	<select id="countReactions" parameterType="string" resultType="int">
+		SELECT COUNT(*) 
+		FROM reaction 
+		WHERE write_no = #{writeNo}
+	</select>
+	
+	<insert id="addBookmark">
+		INSERT 
+		INTO bookmark(user_id, write_no, bookmark_date)  
+		VALUES(#{userId}, #{writeNo}, sysdate)
+	</insert>
+	
+	<delete id="deleteBookmark">
+		DELETE 
+		FROM bookmark 
+		WHERE user_id=#{userId} 
+		AND write_no=#{writeNo}
+	</delete>
+	
+	<select id="isBookmarked" parameterType="string" resultType="int">
+		SELECT count(*) 
+		FROM bookmark 
+		WHERE user_id=#{userId} 
+		AND write_no=#{writeNo}
+	</select>
+	
+</mapper>
+
+
+
+
+
+
+

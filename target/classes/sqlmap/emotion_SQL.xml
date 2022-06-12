@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ucamp.project.emotion.EmotionDAO">
+	
+	<select id="getEmotionName" resultType="string" parameterType="string">
+		SELECT emotion_name 
+		FROM (SELECT * FROM emotion WHERE main_emotion=#{mainEmotion} ORDER BY dbms_random.random) 
+		WHERE rownum = 1
+	</select>
+	
+	<select id="getMyEmotionName" resultType="string" parameterType="string">
+		SELECT emotion_code 
+		FROM empathy where user_id = #{userId}
+		AND to_char(empathy_date,'yyyy-mm-dd') = to_char(sysdate,'yyyy-mm-dd')
+	</select>
+	
+	<insert id="addEmpathy" parameterType="string" >
+		INSERT INTO empathy(empathy_no, user_id, emotion_code, empathy_date)
+		VALUES(EMPATHY_NO_SEQ.nextval, #{userId}, #{emotionCode}, sysdate)
+	</insert>
+	
+	<select id="getTrendEmotion" resultType="string">
+		<![CDATA[
+			SELECT emotion_name 
+			FROM (SELECT e.emotion_name, COUNT(*) 
+			      FROM empathy p, emotion e 
+			      WHERE e.emotion_code = p.emotion_code 
+			      GROUP BY emotion_name  
+			      ORDER BY 2 DESC) 
+			WHERE rownum <= 3
+		]]>
+	</select>
+	
+	<select id="getTrendWrite" parameterType="string" resultType="com.ucamp.project.dto.boardDTO">
+		SELECT b.write_no
+		  , b.writer_id
+		  , a.pen_name
+		  , b.contents
+	      , b.write_date
+	      , e.emotion_code
+	      , s.suggestion_name
+	      , b.share_status
+	      , e.emotion_name
+	      , s.suggestion_code 
+		FROM app_user a, board b, suggestion s, emotion e 
+		WHERE b.writer_id = a.user_id 
+		AND b.suggestion_code = s.suggestion_code 
+		AND e.emotion_code = s.emotion_code 
+		AND b.share_status = '전체' 
+		AND e.emotion_code = #{emotionCode}
+	</select>
+	
+	<select id="selectSuggestion" parameterType="string" resultType="string">
+		<![CDATA[
+			SELECT suggestion_name 
+			FROM    
+			  	(SELECT DISTINCT s.suggestion_name 
+			  	FROM app_user a, empathy p, emotion e, suggestion s    
+				WHERE a.user_id = #{userId}   
+				AND a.user_id = p.user_id    
+				AND p.emotion_code = e.emotion_code    
+				AND e.emotion_code = s.emotion_code    
+				ORDER BY dbms_random.random)  
+			WHERE rownum<=2
+		]]>
+	</select>
+	
+	<select id="getSuggestionCode" parameterType="string" resultType="string">
+		SELECT suggestion_code 
+		FROM suggestion 
+		WHERE suggestion_name = #{suggestionName}
+	</select>
+	
+	<select id="getEmotionCode" parameterType="string" resultType="string">
+		SELECT emotion_code 
+		FROM emotion 
+		WHERE emotion_name = #{emotionName}
+	</select>
+	
+	<select id="getEmotionNameByEympathy" parameterType="string" resultType="string">
+		SELECT e.emotion_name 
+		FROM emotion e, empathy p 
+		WHERE e.emotion_code = p.emotion_code 
+		AND user_id = #{userId}
+	</select>
+	
+	<!-- 
+	<select id="selectMember" parameterType="String" resultType="ucamp.dao.MemberVO">
+		select member_id as memberId, pw, name from member_data where
+		member_id= #{id}
+	</select>
+	<select id="selectMemberWithoutPw" parameterType="String" resultType="ucamp.dao.MemberVO">
+		select member_id as memberId, name from member_data where
+		member_id= #{id}
+	</select>
+
+	<select id="selectMemberList" resultType="ucamp.dao.MemberVO">
+		select member_id as memberId, name from member_data
+	</select>
+	-->
+	<!--  
+	<select id="selectFollowList" resultType="com.project.model.FollowListVO">
+		  SELECT 
+		  fl.follow_no AS follow_no
+		  , to_char(fl.follow_date, 'yyyy.mm.dd') AS follow_date
+		  , fl.followee_id AS followee_id
+		  , fl.follower_id AS follower_id
+		  , a.pen_name AS followee_pen_name
+	      FROM follow_list fl, app_user a
+	      WHERE fl.followee_id = a.user_id
+	</select>
+	 -->
+	
+	<!-- 
+	AND fl.follower_id = 'test2'
+	<insert id="addMember" parameterType="ucamp.dao.MemberVO">
+		insert into member_data(member_id, pw, name) values (#{memberId}, #{pw}, #{name})
+		INSERT INTO follow_list(follow_no, followee_id, follower_id, follow_date) VALUES(#{followNo}, #{follweeId}, #{follower_id}, sysdate);
+	</insert>
+	 -->
+	
+	<!-- 
+	<update id="updateMember" parameterType="ucamp.dao.MemberVO">
+		update member_data set pw=#{pw} where member_id=#{memberId}
+	</update>
+	
+	<delete id="removeMember" parameterType="String">
+		delete from member_data where member_id=#{memberId}
+	</delete>
+	 -->	 
+	 
+</mapper>
+
+
+
+
+
+
+
